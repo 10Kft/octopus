@@ -52,6 +52,10 @@ module Octopus
       conn.update(arel, name, binds)
     end
 
+    def create(*args, &block)
+      legacy_method_missing_logic('create', *args, &block)
+    end
+
     def delete(*args, &block)
       legacy_method_missing_logic('delete', *args, &block)
     end
