@@ -306,8 +306,13 @@ describe Octopus::Model do
 
   describe 'using a postgresql shard' do
     it 'should update the Arel Engine' do
-      expect(User.using(:postgresql_shard).arel_engine.connection.adapter_name).to eq('PostgreSQL')
-      expect(User.using(:alone_shard).arel_engine.connection.adapter_name).to eq('Mysql2')
+      if Octopus.atleast_rails52?
+        expect(User.using(:postgresql_shard).connection.adapter_name).to eq('PostgreSQL')
+        expect(User.using(:alone_shard).connection.adapter_name).to eq('Mysql2')
+      else 
+        expect(User.using(:postgresql_shard).arel_engine.connection.adapter_name).to eq('PostgreSQL')
+        expect(User.using(:alone_shard).arel_engine.connection.adapter_name).to eq('Mysql2')
+      end
     end
 
     it 'should works with writes and reads' do
@@ -391,6 +396,18 @@ describe Octopus::Model do
 
       expect(User.using(:brazil).maximum(:number)).to eq(11)
       expect(User.using(:master).maximum(:number)).to eq(12)
+    end
+
+    it 'sum' do
+      u = User.using(:brazil).create!(:name => 'Teste', :number => 11)
+      v = User.using(:master).create!(:name => 'Teste', :number => 12)
+
+      expect(User.using(:master).sum(:number)).to eq(12)
+      expect(User.using(:brazil).sum(:number)).to eq(11)
+
+      expect(User.where(id: v.id).sum(:number)).to eq(12)
+      expect(User.using(:brazil).where(id: u.id).sum(:number)).to eq(11)
+      expect(User.using(:master).where(id: v.id).sum(:number)).to eq(12)
     end
 
     describe 'any?' do
